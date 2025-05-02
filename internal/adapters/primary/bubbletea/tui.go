@@ -24,3 +24,12 @@ func (h *handler) MustRun(ctx context.Context) {
 		os.Exit(1)
 	}
 }
+
+func initialModel() model {
+	return model{
+		tabs:      []string{"1", "2", "3"},
+		activeTab: 0,
+		width:     10,
+		height:    10,
+	}
+}
