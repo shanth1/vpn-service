@@ -1,15 +1,21 @@
 package bubbletea
 
 import (
+	"fmt"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
+type tab struct {
+	title   string
+	content tea.Model
+}
+
 type model struct {
 	activeTab int
-	tabs      []string
+	tabs      []*tab
 	width     int
 	height    int
 }
@@ -56,15 +62,19 @@ func (m model) View() string {
 	var renderedTabs []string
 	for i, tab := range m.tabs {
 		if i == m.activeTab {
-			renderedTabs = append(renderedTabs, activeTabStyle.Render(tab))
+			renderedTabs = append(renderedTabs, activeTabStyle.Render(getNumTabTitle(i, tab.title)))
 		} else {
-			renderedTabs = append(renderedTabs, tabStyle.Render(tab))
+			renderedTabs = append(renderedTabs, tabStyle.Render(getNumTabTitle(i, tab.title)))
 		}
 	}
 
 	tabsRow := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
 
-	content := "Выбран таб: " + m.tabs[m.activeTab]
+	content := "Выбран таб: " + m.tabs[m.activeTab].title
 
 	return borderStyle.Render(tabsRow + lipgloss.NewStyle().Padding(2, 2).Render(content))
+}
+
+func getNumTabTitle(i int, title string) string {
+	return fmt.Sprintf("(%d) %s", i+1, title)
 }

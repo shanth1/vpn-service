@@ -27,7 +27,24 @@ func (h *handler) MustRun(ctx context.Context) {
 
 func initialModel() model {
 	return model{
-		tabs:      []string{"1", "2", "3"},
+		tabs: []*tab{
+			{
+				title:   "Help",
+				content: nil,
+			},
+			{
+				title:   "Service",
+				content: nil,
+			},
+			{
+				title:   "Monitoring",
+				content: nil,
+			},
+			{
+				title:   "Users",
+				content: nil,
+			},
+		},
 		activeTab: 0,
 		width:     10,
 		height:    10,
