@@ -4,6 +4,12 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+var (
+	keywordStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204")).Background(lipgloss.Color("235"))
+	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
 type model struct {
@@ -42,13 +48,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected[m.cursor] = struct{}{}
 			}
 		}
+
 	}
 
-	return m, nil
+	return m, tea.EnterAltScreen
 }
 
 func (m model) View() string {
 	s := "What should we buy at the market?\n\n"
+
+	s += fmt.Sprintf("%s\n\n", keywordStyle.Render("KEYWORD"))
+	s += fmt.Sprintf("%s\n\n", helpStyle.Render("HELP"))
 
 	for i, choice := range m.choices {
 		cursor := " "
