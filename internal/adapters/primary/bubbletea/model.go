@@ -3,6 +3,8 @@ package bubbletea
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -13,10 +15,15 @@ var (
 )
 
 type model struct {
-	choices  []string
-	cursor   int
-	selected map[int]struct{}
+	textInput textinput.Model
+	choices   []string
+	cursor    int
+	selected  map[int]struct{}
+	help      help.Model
+	keymap    keymap
 }
+
+type keymap struct{}
 
 func (m model) Init() tea.Cmd {
 	return nil
@@ -40,6 +47,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 
+		case "tab":
+			m.textInput.Focus()
+
 		case "enter", " ":
 			_, ok := m.selected[m.cursor]
 			if ok {
@@ -51,7 +61,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	}
 
-	return m, tea.EnterAltScreen
+	var cmd tea.Cmd
+	m.textInput, cmd = m.textInput.Update(msg)
+	return m, cmd
 }
 
 func (m model) View() string {
@@ -74,14 +86,33 @@ func (m model) View() string {
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
 	}
 
+	s += fmt.Sprintf("\n%s\n", m.textInput.View())
+
 	s += "\nPress q to quit.\n"
 
 	return s
 }
 
 func initialModel() model {
+	ti := textinput.New()
+	ti.Placeholder = "repository"
+	ti.Prompt = "charmbracelet/"
+	ti.PromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
+	// ti.Focus()
+	ti.CharLimit = 50
+	ti.Width = 20
+	ti.ShowSuggestions = true
+
+	h := help.New()
+
+	km := keymap{}
+
 	return model{
-		choices:  []string{"Buy carrots", "Buy celery", "Buy kohlrabi"},
-		selected: make(map[int]struct{}),
+		textInput: ti,
+		choices:   []string{"Buy carrots", "Buy celery", "Buy kohlrabi"},
+		selected:  make(map[int]struct{}),
+		help:      h,
+		keymap:    km,
 	}
 }
