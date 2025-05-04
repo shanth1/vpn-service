@@ -13,6 +13,13 @@ type tab struct {
 	content tea.Model
 }
 
+func newTab(title string, content tea.Model) *tab {
+	return &tab{
+		title:   title,
+		content: content,
+	}
+}
+
 type model struct {
 	activeTab int
 	tabs      []*tab
@@ -21,10 +28,22 @@ type model struct {
 }
 
 func (m model) Init() tea.Cmd {
+	if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
+		return m.tabs[m.activeTab].content.Init()
+		// Если нужно инициализировать все табы сразу:
+		// var cmds []tea.Cmd
+		// for _, t := range m.tabs {
+		//  cmds = append(cmds, t.Content.Init())
+		// }
+		// return tea.Batch(cmds...)
+	}
 	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		key := msg.String()
@@ -37,15 +56,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				num = len(m.tabs)
 			}
 			m.activeTab = num - 1
+		default:
+			if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
+				var updatedContent tea.Model
+				updatedContent, cmd = m.tabs[m.activeTab].content.Update(msg)
+				m.tabs[m.activeTab].content = updatedContent
+				cmds = append(cmds, cmd)
+			}
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		for i := range m.tabs {
+			if m.tabs[i].content != nil {
+				var updatedContent tea.Model
+				updatedContent, cmd = m.tabs[i].content.Update(msg)
+				m.tabs[i].content = updatedContent
+				cmds = append(cmds, cmd)
+			}
+		}
+	default:
+		if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
+			var updatedContent tea.Model
+			updatedContent, cmd = m.tabs[m.activeTab].content.Update(msg)
+			m.tabs[m.activeTab].content = updatedContent
+			cmds = append(cmds, cmd)
+		}
 	}
-	return m, nil
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
+	if m.width == 0 {
+		return "Loading..."
+	}
+
 	borderStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
 		Width(m.width - 2).
@@ -70,7 +115,12 @@ func (m model) View() string {
 
 	tabsRow := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
 
-	content := "Выбран таб: " + m.tabs[m.activeTab].title
+	var content string
+	if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
+		content = m.tabs[m.activeTab].content.View()
+	} else {
+		content = "No active content"
+	}
 
 	return borderStyle.Render(tabsRow + lipgloss.NewStyle().Padding(2, 2).Render(content))
 }
