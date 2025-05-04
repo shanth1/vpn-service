@@ -30,12 +30,6 @@ type model struct {
 func (m model) Init() tea.Cmd {
 	if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
 		return m.tabs[m.activeTab].content.Init()
-		// Если нужно инициализировать все табы сразу:
-		// var cmds []tea.Cmd
-		// for _, t := range m.tabs {
-		//  cmds = append(cmds, t.Content.Init())
-		// }
-		// return tea.Batch(cmds...)
 	}
 	return nil
 }
@@ -52,10 +46,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
 			num, _ := strconv.Atoi(key)
-			if num > len(m.tabs) {
-				num = len(m.tabs)
+			if num > 0 && num <= len(m.tabs) {
+				m.activeTab = num - 1
+				if m.tabs[m.activeTab].content != nil {
+					cmd = m.tabs[m.activeTab].content.Init()
+					cmds = append(cmds, cmd)
+				}
 			}
-			m.activeTab = num - 1
 		default:
 			if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
 				var updatedContent tea.Model
