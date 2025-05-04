@@ -6,6 +6,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	helppage "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/help"
 	"github.com/shanth1/vpn-service/internal/core/ports"
 )
 
@@ -28,10 +29,7 @@ func (h *handler) MustRun(ctx context.Context) {
 func initialModel() model {
 	return model{
 		tabs: []*tab{
-			{
-				title:   "Help",
-				content: nil,
-			},
+			newTab(helppage.TabTitle, helppage.New()),
 			{
 				title:   "Service",
 				content: nil,

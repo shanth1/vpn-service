@@ -64,10 +64,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+
+		tabsRowHeight := lipgloss.Height(m.renderTabsRow())
+		contentWidth := m.width - 2
+		contentHeight := m.height - 2 - tabsRowHeight
+		contentSizeMsg := tea.WindowSizeMsg{
+			Width:  contentWidth,
+			Height: contentHeight,
+		}
 		for i := range m.tabs {
 			if m.tabs[i].content != nil {
 				var updatedContent tea.Model
-				updatedContent, cmd = m.tabs[i].content.Update(msg)
+				updatedContent, cmd = m.tabs[i].content.Update(contentSizeMsg)
 				m.tabs[i].content = updatedContent
 				cmds = append(cmds, cmd)
 			}
@@ -83,10 +91,52 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m model) renderTabsRow() string {
 	if m.width == 0 {
-		return "Loading..."
+		return ""
 	}
+	tabStyle := lipgloss.NewStyle().Padding(0, 2)
+	activeTabStyle := tabStyle.
+		Background(lipgloss.Color("#fa0")).
+		Foreground(lipgloss.Color("#000")).
+		Bold(true)
+
+	var renderedTabs []string
+	for i, t := range m.tabs {
+		title := getNumTabTitle(i, t.title)
+		if i == m.activeTab {
+			renderedTabs = append(renderedTabs, activeTabStyle.Render(title))
+		} else {
+			renderedTabs = append(renderedTabs, tabStyle.Render(title))
+		}
+	}
+	return lipgloss.NewStyle().Width(m.width - 2).Render(lipgloss.JoinHorizontal(lipgloss.Left, renderedTabs...))
+}
+
+func (m model) View() string {
+	if m.width == 0 || m.height == 0 {
+		return "Initializing..."
+	}
+
+	tabsRow := m.renderTabsRow()
+	tabsRowHeight := lipgloss.Height(tabsRow)
+
+	contentHeight := m.height - 2 - tabsRowHeight
+	if contentHeight < 0 {
+		contentHeight = 0
+	}
+
+	var contentStr string
+	if len(m.tabs) > 0 && m.activeTab < len(m.tabs) && m.tabs[m.activeTab].content != nil {
+		contentStr = m.tabs[m.activeTab].content.View()
+	} else {
+		contentStr = "No active content"
+	}
+
+	finalContent := lipgloss.JoinVertical(lipgloss.Left,
+		tabsRow,
+		lipgloss.NewStyle().Height(contentHeight).Render(contentStr),
+	)
 
 	borderStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
@@ -94,32 +144,7 @@ func (m model) View() string {
 		Height(m.height - 2).
 		BorderForeground(lipgloss.Color("#fa0"))
 
-	tabStyle := lipgloss.NewStyle().
-		Padding(0, 2)
-	activeTabStyle := tabStyle.
-		Background(lipgloss.Color("#fa0")).
-		Foreground(lipgloss.Color("#000")).
-		Bold(true)
-
-	var renderedTabs []string
-	for i, tab := range m.tabs {
-		if i == m.activeTab {
-			renderedTabs = append(renderedTabs, activeTabStyle.Render(getNumTabTitle(i, tab.title)))
-		} else {
-			renderedTabs = append(renderedTabs, tabStyle.Render(getNumTabTitle(i, tab.title)))
-		}
-	}
-
-	tabsRow := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
-
-	var content string
-	if len(m.tabs) > 0 && m.tabs[m.activeTab].content != nil {
-		content = m.tabs[m.activeTab].content.View()
-	} else {
-		content = "No active content"
-	}
-
-	return borderStyle.Render(tabsRow + lipgloss.NewStyle().Padding(2, 2).Render(content))
+	return borderStyle.Render(finalContent)
 }
 
 func getNumTabTitle(i int, title string) string {
