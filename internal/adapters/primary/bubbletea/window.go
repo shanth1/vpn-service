@@ -8,6 +8,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	paddingTop    = 1
+	paddingBottom = 1
+	paddingLeft   = 2
+	paddingRight  = 2
+)
+
 type tab struct {
 	title   string
 	content tea.Model
@@ -66,8 +73,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 
 		tabsRowHeight := lipgloss.Height(m.renderTabsRow())
-		contentWidth := m.width - 2
-		contentHeight := m.height - 2 - tabsRowHeight
+
+		availableWidth := m.width - 2
+		availableHeight := m.height - 2 - tabsRowHeight
+
+		contentWidth := availableWidth - paddingLeft - paddingRight
+		contentHeight := availableHeight - paddingTop - paddingBottom
+		if contentWidth < 0 {
+			contentWidth = 0
+		}
+		if contentHeight < 0 {
+			contentHeight = 0
+		}
+
 		contentSizeMsg := tea.WindowSizeMsg{
 			Width:  contentWidth,
 			Height: contentHeight,
@@ -121,21 +139,41 @@ func (m model) View() string {
 	tabsRow := m.renderTabsRow()
 	tabsRowHeight := lipgloss.Height(tabsRow)
 
-	contentHeight := m.height - 2 - tabsRowHeight
-	if contentHeight < 0 {
-		contentHeight = 0
+	containerHeight := m.height - 2 - tabsRowHeight
+	if containerHeight < 0 {
+		containerHeight = 0
+	}
+
+	containerWidth := m.width - 2
+	if containerWidth < 0 {
+		containerWidth = 0
 	}
 
 	var contentStr string
 	if len(m.tabs) > 0 && m.activeTab < len(m.tabs) && m.tabs[m.activeTab].content != nil {
 		contentStr = m.tabs[m.activeTab].content.View()
 	} else {
-		contentStr = "No active content"
+		noContentWidth := containerWidth - paddingLeft - paddingRight
+		if noContentWidth < 0 {
+			noContentWidth = 0
+		}
+		contentStr = lipgloss.PlaceHorizontal(
+			noContentWidth,
+			lipgloss.Center,
+			"No active content",
+		)
 	}
+
+	contentContainerStyle := lipgloss.NewStyle().
+		Width(containerWidth).
+		Height(containerHeight).
+		Padding(paddingTop, paddingRight, paddingBottom, paddingLeft)
+
+	renderedContent := contentContainerStyle.Render(contentStr)
 
 	finalContent := lipgloss.JoinVertical(lipgloss.Left,
 		tabsRow,
-		lipgloss.NewStyle().Height(contentHeight).Render(contentStr),
+		renderedContent,
 	)
 
 	borderStyle := lipgloss.NewStyle().
