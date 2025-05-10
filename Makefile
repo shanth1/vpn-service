@@ -1,2 +1,2 @@
 go:
-	go run cmd/cli/main.go
+	go run cmd/tui/main.go
