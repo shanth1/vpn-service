@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	tuicommon "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/common"
 )
 
 const TabTitle = "Loading"
@@ -33,7 +34,7 @@ type Model struct {
 func New() Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#fa0"))
+	s.Style = lipgloss.NewStyle().Foreground(tuicommon.AccentColor)
 	return Model{
 		isLoading: true,
 		spinner:   s,

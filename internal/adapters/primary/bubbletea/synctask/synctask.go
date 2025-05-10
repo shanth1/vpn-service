@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	tuicommon "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/common"
 )
 
 const TabTitle = "Sync Task"
@@ -127,13 +128,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	listStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, true, false, false).
-		BorderForeground(lipgloss.Color("#fa0")).Padding(1, 2)
+		BorderForeground(tuicommon.AccentColor).Padding(1, 2)
 	statusStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, false, true).
-		BorderForeground(lipgloss.Color("#fa0")).Padding(1, 2)
-	selectedItemStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#fa0")).Bold(true)
-	errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	successStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
-	loadingStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#fa0")).Italic(true)
+		BorderForeground(tuicommon.AccentColor).Padding(1, 2)
+	selectedItemStyle := lipgloss.NewStyle().Foreground(tuicommon.AccentColor).Bold(true)
+	loadingStyle := lipgloss.NewStyle().Foreground(tuicommon.AccentColor).Italic(true)
 
 	var listBuilder strings.Builder
 	listBuilder.WriteString("Выберите задачу (Up/Down) и нажмите Enter:\n\n")
@@ -156,9 +155,9 @@ func (m Model) View() string {
 	if m.isLoading && m.runningTaskIndex != -1 {
 		statusBuilder.WriteString(loadingStyle.Render(fmt.Sprintf("Выполняется: %s", m.tasks[m.runningTaskIndex].name)))
 	} else if m.err != nil {
-		statusBuilder.WriteString(errorStyle.Render(fmt.Sprintf("Ошибка: %v", m.err)))
+		statusBuilder.WriteString(tuicommon.ErrorStyle.Render(fmt.Sprintf("Ошибка: %v", m.err)))
 	} else if m.lastResult != "" {
-		statusBuilder.WriteString(successStyle.Render(m.lastResult))
+		statusBuilder.WriteString(tuicommon.SuccessStyle.Render(m.lastResult))
 	} else {
 		statusBuilder.WriteString("Ожидание запуска задачи...")
 	}

@@ -6,14 +6,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	tuicommon "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/common"
 )
 
 const TabTitle = "Help"
-
-var (
-	titleStyle = lipgloss.NewStyle().Bold(true).Margin(0, 1)
-	infoStyle  = lipgloss.NewStyle().Margin(0, 1)
-)
 
 type model struct {
 	content  string
@@ -81,12 +77,12 @@ func (m model) View() string {
 }
 
 func (m model) headerView() string {
-	title := titleStyle.Render("Help Content Header")
+	title := tuicommon.TitleStyle.Render("Help Content Header")
 	return lipgloss.NewStyle().Width(m.width).Align(lipgloss.Center).Render(title)
 }
 
 func (m model) footerView() string {
-	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
+	info := tuicommon.InfoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
 	return lipgloss.NewStyle().Width(m.width).Align(lipgloss.Right).Render(info)
 }
 

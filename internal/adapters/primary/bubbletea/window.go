@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/common"
 )
 
 const (
@@ -115,8 +116,8 @@ func (m model) renderTabsRow() string {
 	}
 	tabStyle := lipgloss.NewStyle().Padding(0, 2)
 	activeTabStyle := tabStyle.
-		Background(lipgloss.Color("#fa0")).
-		Foreground(lipgloss.Color("#000")).
+		Background(tuicommon.AccentColor).
+		Foreground(tuicommon.PrimaryColor).
 		Bold(true)
 
 	var renderedTabs []string
@@ -180,7 +181,7 @@ func (m model) View() string {
 		Border(lipgloss.NormalBorder()).
 		Width(m.width - 2).
 		Height(m.height - 2).
-		BorderForeground(lipgloss.Color("#fa0"))
+		BorderForeground(tuicommon.AccentColor)
 
 	return borderStyle.Render(finalContent)
 }
