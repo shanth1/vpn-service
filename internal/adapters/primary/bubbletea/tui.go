@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	helppage "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/help"
+	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/loading"
 	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/synctask"
 	"github.com/shanth1/vpn-service/internal/core/ports"
 )
@@ -32,6 +33,7 @@ func initialModel() model {
 		tabs: []*tab{
 			newTab(helppage.TabTitle, helppage.New()),
 			newTab(synctask.TabTitle, synctask.New()),
+			newTab(loading.TabTitle, loading.New()),
 			{
 				title:   "Service",
 				content: nil,
