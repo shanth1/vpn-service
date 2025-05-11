@@ -6,9 +6,9 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	helppage "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/help"
-	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/loading"
-	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/synctask"
+	helppage "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/tabs/help"
+	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/tabs/loading"
+	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/tabs/synctask"
 	"github.com/shanth1/vpn-service/internal/core/ports"
 )
 
