@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	tuicommon "github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea/common"
+	"github.com/shanth1/vpn-service/internal/core/ports"
 )
 
 const TabTitle = "Sync Task"
@@ -30,6 +31,7 @@ type taskInfo struct {
 }
 
 type Model struct {
+	service          ports.PrimaryPort
 	width            int
 	height           int
 	tasks            []taskInfo
@@ -40,13 +42,14 @@ type Model struct {
 	err              error
 }
 
-func New() Model {
+func New(service ports.PrimaryPort) Model {
 	tasks := []taskInfo{
 		{id: 0, name: "Задача A (2 сек, успех/ошибка 50%)"},
 		{id: 1, name: "Задача B (3 сек, всегда успех)"},
 		{id: 2, name: "Задача C (1 сек, всегда ошибка)"},
 	}
 	return Model{
+		service:          service,
 		tasks:            tasks,
 		selectedTask:     0,
 		runningTaskIndex: -1,

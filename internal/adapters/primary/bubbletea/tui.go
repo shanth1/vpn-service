@@ -21,18 +21,18 @@ func NewTUIHandler(service ports.PrimaryPort) *handler {
 }
 
 func (h *handler) MustRun(ctx context.Context) {
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel(h.service), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
 }
 
-func initialModel() model {
+func initialModel(service ports.PrimaryPort) model {
 	return model{
 		tabs: []*tab{
 			newTab(helppage.TabTitle, helppage.New()),
-			newTab(synctask.TabTitle, synctask.New()),
+			newTab(synctask.TabTitle, synctask.New(service)),
 			newTab(loading.TabTitle, loading.New()),
 			{
 				title:   "Service",
