@@ -1,19 +1,28 @@
 package domain
 
+import (
+	"net"
+	"time"
+)
+
 type User struct {
-	ID   string
-	Name string
+	TG        string
+	PublicKey string
+	Name      string
+	Surname   string
+	Email     string
 }
 
 type TrafficInfo struct {
-	UserID   string
-	Upload   int64
-	Download int64
-	LastSeen string
+	Endpoint        net.IP // user ip
+	TransferBytes   int64
+	ReceivedBytes   int64
+	LatestHandshake time.Time
 }
 
 type Status struct {
-	IsRunning  bool
-	Peers      int
-	ListenPort int
+	IsRunning     bool
+	Peers         int
+	ListeningPort int
+	Interface     *net.Interface
 }

@@ -10,7 +10,10 @@ import (
 func main() {
 	ctx := context.Background()
 
-	service := usecase.NewVPNService()
+	// TODO: protocol
+	// TODO: qr
+
+	service := usecase.NewVPNService(nil, nil)
 	tuiHandler := bubbletea.NewTUIHandler(service)
 	tuiHandler.MustRun(ctx)
 }
