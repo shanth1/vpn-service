@@ -9,9 +9,9 @@ type vpnServiceImpl struct {
 	qr       ports.QRCode
 }
 
-func NewVPNService(protocol ports.Protocol, qr ports.QRCode) ports.PrimaryPort {
+func NewVPNService(protocolInfra ports.Protocol, qrInfra ports.QRCode) ports.PrimaryPort {
 	return &vpnServiceImpl{
-		protocol: protocol,
-		qr:       qr,
+		protocol: protocolInfra,
+		qr:       qrInfra,
 	}
 }

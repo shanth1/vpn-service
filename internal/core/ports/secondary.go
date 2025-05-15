@@ -29,7 +29,5 @@ type Protocol interface {
 
 // QRCode is secondary port for working with qr codes
 type QRCode interface {
-	Install(ctx context.Context) error
-	Uninstall(ctx context.Context) error
-	Generate(ctx context.Context, data []byte) error
+	Generate(ctx context.Context, fileName string, data []byte) error
 }
