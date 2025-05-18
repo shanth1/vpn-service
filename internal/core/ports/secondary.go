@@ -14,8 +14,6 @@ type Protocol interface {
 	SetUpServer(ctx context.Context) error
 	TearDownServer(ctx context.Context) error
 
-	SetUpRedirection(ctx context.Context) error
-
 	StartService(ctx context.Context) error
 	StopService(ctx context.Context) error
 	GetStatus(ctx context.Context) (*domain.Status, error)
@@ -30,4 +28,10 @@ type Protocol interface {
 // QRCode is secondary port for working with qr codes
 type QRCode interface {
 	Generate(ctx context.Context, fileName string, data []byte) error
+}
+
+// System is secondary port for working with system
+type System interface {
+	SetUpRedirection(ctx context.Context) error
+	GetNetworkInfo() (ifaceName, ip string, err error)
 }

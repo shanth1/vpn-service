@@ -9,7 +9,7 @@ import (
 
 type infra struct{}
 
-func NewQRInfra() *infra {
+func NewInfra() *infra {
 	return &infra{}
 }
 

@@ -34,7 +34,7 @@ SaveConfig = true
 
 PostUp = iptables -A FORWARD -i %%i -j ACCEPT; iptables -t nat -A POSTROUTING -o %s -j MASQUERADE; iptables -A FORWARD -o %%i -j ACCEPT
 PostDown = iptables -D FORWARD -i %%i -j ACCEPT; iptables -t nat -D POSTROUTING -o %s -j MASQUERADE; iptables -D FORWARD -o %%i -j ACCEPT
-`, string(privateKeyBytes), w.serverVPNAddrCIDR, w.serverListenPort, w.publicNetIface, w.publicNetIface)
+`, string(privateKeyBytes), w.serverVPNAddrCIDR, w.serverListenPort, w.netPublicIfaceName, w.netPublicIfaceName)
 
 	if err := os.WriteFile(w.serverConfigPath, []byte(serverConfContent), 0600); err != nil {
 		return fmt.Errorf("server configuration: %w", err)

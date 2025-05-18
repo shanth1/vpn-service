@@ -2,21 +2,27 @@ package main
 
 import (
 	"context"
+	"log"
 
 	"github.com/shanth1/vpn-service/internal/adapters/primary/bubbletea"
 	"github.com/shanth1/vpn-service/internal/adapters/secondary/qr"
+	"github.com/shanth1/vpn-service/internal/adapters/secondary/system"
+	"github.com/shanth1/vpn-service/internal/adapters/secondary/wireguard"
 	"github.com/shanth1/vpn-service/internal/core/usecase"
 )
 
 func main() {
 	ctx := context.Background()
 
-	// TODO: protocol
-	qrInfra := qr.NewQRInfra()
+	systemInfra := system.NewInfra()
+	ifaceName, publicIP, err := systemInfra.GetNetworkInfo()
+	if err != nil {
+		log.Fatalf("network info: %v", err)
+	}
+	wgInfra := wireguard.NewInfra(publicIP, ifaceName)
+	qrInfra := qr.NewInfra()
 
-	qrInfra.Generate(ctx, "test", []byte{1, 2, 3, 4})
-	service := usecase.NewVPNService(nil, qrInfra)
+	service := usecase.NewVPNService(systemInfra, wgInfra, qrInfra)
 	tuiHandler := bubbletea.NewTUIHandler(service)
 	tuiHandler.MustRun(ctx)
-
 }

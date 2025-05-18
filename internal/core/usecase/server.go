@@ -6,12 +6,12 @@ import (
 )
 
 func (s *vpnServiceImpl) Init(ctx context.Context) error {
-	if err := s.protocol.SetUpServer(ctx); err != nil {
-		return fmt.Errorf("server: %w", err)
+	if err := s.system.SetUpRedirection(ctx); err != nil {
+		return fmt.Errorf("redirection: %w", err)
 	}
 
-	if err := s.protocol.SetUpRedirection(ctx); err != nil {
-		return fmt.Errorf("redirection: %w", err)
+	if err := s.protocol.SetUpServer(ctx); err != nil {
+		return fmt.Errorf("server: %w", err)
 	}
 
 	return nil

@@ -1,8 +1,7 @@
-package wireguard
+package system
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -11,15 +10,10 @@ import (
 	"github.com/shanth1/vpn-service/internal/common"
 )
 
-// TODO: move to system adapter
 // SetUpRedirection enables IPv4 forwarding
-func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
-	if w.publicNetIface == "" {
-		return errors.New("empy net interface")
-	}
-
-	if _, err := common.RunCommand(ctx, "sysctl", "-w", "net.ipv4.ip_forward=1"); err != nil {
-		return fmt.Errorf("enable ipv4 forwarding: %w", err)
+func (s *systemInfra) SetUpRedirection(ctx context.Context) error {
+	if _, err := common.RunCommand(ctx, "sysctl", "-s", "net.ipv4.ip_forward=1"); err != nil {
+		return fmt.Errorf("enable ipv4 forwarding: %s", err)
 	}
 
 	sysctlConfPath := "/etc/sysctl.conf"
@@ -27,7 +21,7 @@ func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
 
 	contentBytes, err := os.ReadFile(sysctlConfPath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("read sysctl config: %w", sysctlConfPath, err)
+		return fmt.Errorf("read sysctl config: %s", sysctlConfPath, err)
 	}
 	content := string(contentBytes)
 	re := regexp.MustCompile(`(?m)^\s*#?\s*net.ipv4.ip_forward\s*=\s*.*`)
@@ -40,10 +34,10 @@ func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
 		content = re.ReplaceAllString(content, sysctlLine)
 	}
 	if err := os.WriteFile(sysctlConfPath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("write updated content: %w", sysctlConfPath, err)
+		return fmt.Errorf("write updated content: %s", sysctlConfPath, err)
 	}
 	if _, err := common.RunCommand(ctx, "sysctl", "-p"); err != nil {
-		return fmt.Errorf("sysctl update: %w", err)
+		return fmt.Errorf("sysctl update: %s", err)
 	}
 
 	return nil

@@ -19,32 +19,32 @@ import (
 */
 
 type wireguardInfra struct {
-	serverPublicIP    string
-	serverListenPort  int
-	serverVPNAddrCIDR string
-	serverDir         string
-	clientsDir        string
-	serverConfigPath  string
-	serverPubKeyPath  string
-	serverPrivKeyPath string
-	publicNetIface    string
-	wgInterfaceName   string
+	serverPublicIP     string
+	serverListenPort   int
+	serverVPNAddrCIDR  string
+	serverDir          string
+	clientsDir         string
+	serverConfigPath   string
+	serverPubKeyPath   string
+	serverPrivKeyPath  string
+	netPublicIfaceName string
+	wgInterfaceName    string
 }
 
-func NewWireguardInfra(serverPublicIP string) ports.Protocol {
+func NewInfra(serverPublicIP, netPublicIfaceName string) ports.Protocol {
 	rootDir := "/etc/wireguard"
 	wgInterface := "wg0"
 
 	return &wireguardInfra{
-		serverPublicIP:    serverPublicIP,
-		serverListenPort:  51820,
-		serverDir:         rootDir,
-		clientsDir:        filepath.Join(rootDir, "clients"),
-		serverConfigPath:  filepath.Join(rootDir, getConfFileName(wgInterface)),
-		serverPubKeyPath:  getPublicKeyPath(rootDir),
-		serverPrivKeyPath: getPrivateKeyPath(rootDir),
-		publicNetIface:    "eth0",
-		wgInterfaceName:   wgInterface,
-		serverVPNAddrCIDR: "10.0.0.1/24",
+		serverPublicIP:     serverPublicIP,
+		serverListenPort:   51820,
+		serverDir:          rootDir,
+		clientsDir:         filepath.Join(rootDir, "clients"),
+		serverConfigPath:   filepath.Join(rootDir, getConfFileName(wgInterface)),
+		serverPubKeyPath:   getPublicKeyPath(rootDir),
+		serverPrivKeyPath:  getPrivateKeyPath(rootDir),
+		netPublicIfaceName: netPublicIfaceName,
+		wgInterfaceName:    wgInterface,
+		serverVPNAddrCIDR:  "10.0.0.1/24",
 	}
 }
