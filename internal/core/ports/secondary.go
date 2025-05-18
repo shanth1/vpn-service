@@ -23,7 +23,7 @@ type Protocol interface {
 	AddUser(ctx context.Context, user *domain.User) error
 	RemoveUser(ctx context.Context, id string) error
 	GetAllUsers(ctx context.Context) ([]*domain.User, error)
-	GetUserTraffic(ctx context.Context, id string) (*domain.TrafficInfo, error)
+	GetUserTraffic(ctx context.Context, userPublicKey string) (*domain.TrafficInfo, error)
 	GetConfig(ctx context.Context, id string) ([]byte, error)
 }
 

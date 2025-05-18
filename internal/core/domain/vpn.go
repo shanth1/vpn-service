@@ -6,11 +6,13 @@ import (
 )
 
 type User struct {
-	TG        string
-	PublicKey string
-	Name      string
-	Surname   string
-	Email     string
+	TG         string
+	PublicKey  string
+	PrivateKey string
+	Name       string
+	Surname    string
+	Email      string
+	Address    string
 }
 
 type TrafficInfo struct {
@@ -24,5 +26,5 @@ type Status struct {
 	IsRunning     bool
 	Peers         int
 	ListeningPort int
-	Interface     *net.Interface
+	InterfaceName string
 }

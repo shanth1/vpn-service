@@ -1,24 +1,25 @@
 package common
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 )
 
-func RunCommand(ctx context.Context, name string, arg ...string) error {
+func RunCommand(ctx context.Context, name string, arg ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, arg...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	err := cmd.Run()
 	if err != nil {
 		if ctx.Err() == context.Canceled {
-			return fmt.Errorf("command %s %v cancelled: %w", name, arg, ctx.Err())
+			return stdout.Bytes(), fmt.Errorf("command %q %v cancelled: %w", name, arg, ctx.Err())
 		}
-		return fmt.Errorf("command %s %v failed: %w", name, arg, err)
+		return stdout.Bytes(), fmt.Errorf("command %q %v failed: %w. Stderr: %s", name, arg, err, stderr.String())
 	}
-
-	return nil
+	return stdout.Bytes(), nil
 }
