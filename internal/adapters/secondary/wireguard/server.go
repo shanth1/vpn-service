@@ -29,9 +29,9 @@ func (w *wireguardInfra) SetUpServer(ctx context.Context) error {
 	publicKeyBytes, err := cmdPubKey.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("wg pubkey failed: %w. Stderr: %s", err, string(exitErr.Stderr))
+			return fmt.Errorf("wg pubkey: %w. Stderr: %s", err, string(exitErr.Stderr))
 		}
-		return fmt.Errorf("wg pubkey failed: %w", err)
+		return fmt.Errorf("wg pubkey: %w", err)
 	}
 	publicKeyBytes = bytes.TrimSpace(publicKeyBytes)
 	if err := os.WriteFile(w.serverPrivKeyPath, publicKeyBytes, 0600); err != nil {
@@ -58,12 +58,10 @@ PostDown = iptables -D FORWARD -i %%i -j ACCEPT; iptables -t nat -D POSTROUTING 
 
 func (w *wireguardInfra) TearDownServer(ctx context.Context) error {
 	if err := w.StopService(ctx); err != nil {
-		// TODO: log warn
+		return fmt.Errorf("stop service: %w", w.serverDir, err)
 	}
 
-	if _, err := common.RunCommand(ctx, "systemctl", "disable", w.serviceName()); err != nil {
-		// TODO: log warn
-	}
+	_, _ = common.RunCommand(ctx, "systemctl", "disable", w.serviceName())
 
 	if err := os.RemoveAll(w.serverDir); err != nil {
 		return fmt.Errorf("remove directory: %w", w.serverDir, err)

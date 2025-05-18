@@ -15,7 +15,7 @@ import (
 // TODO: move to system adapter
 func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
 	if w.publicNetIface == "" {
-		return errors.New("publicNetIface is not set")
+		return errors.New("empy net interface")
 	}
 
 	log.Println("Enabling IPv4 forwarding...")
@@ -28,7 +28,7 @@ func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
 
 	contentBytes, err := os.ReadFile(sysctlConfPath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to read %s: %w", sysctlConfPath, err)
+		return fmt.Errorf("read sysctl config: %w", sysctlConfPath, err)
 	}
 	content := string(contentBytes)
 	re := regexp.MustCompile(`(?m)^\s*#?\s*net.ipv4.ip_forward\s*=\s*.*`)
@@ -41,10 +41,10 @@ func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
 		content = re.ReplaceAllString(content, sysctlLine)
 	}
 	if err := os.WriteFile(sysctlConfPath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("failed to write updated %s: %w", sysctlConfPath, err)
+		return fmt.Errorf("write updated content: %w", sysctlConfPath, err)
 	}
 	if _, err := common.RunCommand(ctx, "sysctl", "-p"); err != nil {
-		log.Printf("Warning: sysctl -p failed: %v", err)
+		return fmt.Errorf("sysctl update: %w", err)
 	}
 
 	return nil

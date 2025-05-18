@@ -23,11 +23,12 @@ import (
 )
 
 func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
-	if user.Name == "" {
-		return errors.New("user name is required")
+	if user.TG == "" {
+		return errors.New("empty tg field")
 	}
+
 	if w.serverPublicIP == "" {
-		return errors.New("serverPublicIP is not configured")
+		return errors.New("empy public ip")
 	}
 
 	clientDir := filepath.Join(w.clientsDir, user.TG)
@@ -38,20 +39,20 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 
 	log.Printf("Creating directory for client %s: %s", user.TG, clientDir)
 	if err := os.MkdirAll(clientDir, 0700); err != nil {
-		return fmt.Errorf("failed to create client directory %s: %w", clientDir, err)
+		return fmt.Errorf("create client directory: %w", err)
 	}
 
 	log.Printf("Generating keys for client %s...", user.TG)
 	privateKeyBytes, err := common.RunCommand(ctx, "wg", "genkey")
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("wg genkey for client failed: %w. Stderr: %s", err, string(exitErr.Stderr))
+			return fmt.Errorf("wg genkey: %w. Stderr: %s", err, string(exitErr.Stderr))
 		}
-		return fmt.Errorf("wg genkey for client failed: %w", err)
+		return fmt.Errorf("wg genkey: %w", err)
 	}
 	user.PrivateKey = strings.TrimSpace(string(privateKeyBytes))
 	if err := os.WriteFile(clientPrivKeyPath, []byte(user.PrivateKey), 0600); err != nil {
-		return fmt.Errorf("failed to write client private key: %w", err)
+		return fmt.Errorf("write client private key: %w", err)
 	}
 
 	cmdPubKey := exec.CommandContext(ctx, "wg", "pubkey")
@@ -59,18 +60,18 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 	publicKeyBytes, err := cmdPubKey.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("wg pubkey for client failed: %w. Stderr: %s", err, string(exitErr.Stderr))
+			return fmt.Errorf("wg pubkey: %w. Stderr: %s", err, string(exitErr.Stderr))
 		}
-		return fmt.Errorf("wg pubkey for client failed: %w", err)
+		return fmt.Errorf("wg pubkey: %w", err)
 	}
 	user.PublicKey = strings.TrimSpace(string(publicKeyBytes))
 	if err := os.WriteFile(clientPubKeyPath, []byte(user.PublicKey), 0600); err != nil {
-		return fmt.Errorf("failed to write client public key: %w", err)
+		return fmt.Errorf("write client public key: %w", err)
 	}
 
 	clientVPNAddress, err := w.findNextAvailableIP(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to find available IP for client %s: %w", user.TG, err)
+		return fmt.Errorf("find available IP: %w", err)
 	}
 	user.Address = clientVPNAddress
 	log.Printf("Assigned IP %s to client %s", user.Address, user.TG)
@@ -79,12 +80,15 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 
 	serverConfBytes, err := os.ReadFile(w.serverConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to read server config %s: %w", w.serverConfigPath, err)
+		return fmt.Errorf("read server config: %w", err)
 	}
 
 	peerComment := fmt.Sprintf("# Client: %s", user.TG)
 	if user.TG != "" {
 		peerComment += fmt.Sprintf(" (TG: %s)", user.TG)
+	}
+	if user.Name != "" {
+		peerComment += fmt.Sprintf(" (Name: %s)", user.TG)
 	}
 	if user.Email != "" {
 		peerComment += fmt.Sprintf(" (Email: %s)", user.Email)
@@ -100,13 +104,13 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 	newServerConf += peerEntry
 
 	if err := os.WriteFile(w.serverConfigPath, []byte(newServerConf), 0600); err != nil {
-		return fmt.Errorf("failed to append peer to server config %s: %w", w.serverConfigPath, err)
+		return fmt.Errorf("append peer to server config: %w", err)
 	}
 
 	log.Printf("Creating configuration file for client %s...", user.TG)
 	serverPubKeyBytes, err := os.ReadFile(w.serverPubKeyPath)
 	if err != nil {
-		return fmt.Errorf("failed to read server public key for client config: %w", err)
+		return fmt.Errorf("read server public key: %w", err)
 	}
 	serverPublicKey := strings.TrimSpace(string(serverPubKeyBytes))
 
@@ -138,19 +142,19 @@ PublicKey = {{.ServerPublicKey}}
 Endpoint = {{.ServerEndpoint}}:{{.ServerListenPort}}
 AllowedIPs = 0.0.0.0/0,::/0
 PersistentKeepalive = {{.PersistentKeepalive}}
-` // Added ::/0 for IPv6 if needed, remove if not.
+`
 	tmpl, err := template.New("clientConf").Parse(clientConfTmpl)
 	if err != nil {
-		return fmt.Errorf("failed to parse client config template: %w", err)
+		return fmt.Errorf("parse config template: %w", err)
 	}
 
 	var clientConfBuf bytes.Buffer
 	if err := tmpl.Execute(&clientConfBuf, clientConfData); err != nil {
-		return fmt.Errorf("failed to execute client config template: %w", err)
+		return fmt.Errorf("execute config template: %w", err)
 	}
 
 	if err := os.WriteFile(clientConfPath, clientConfBuf.Bytes(), 0600); err != nil {
-		return fmt.Errorf("failed to write client config %s: %w", clientConfPath, err)
+		return fmt.Errorf("write client config %s: %w", clientConfPath, err)
 	}
 	log.Printf("Client %s added. Config: %s", user.TG, clientConfPath)
 
@@ -163,6 +167,7 @@ PersistentKeepalive = {{.PersistentKeepalive}}
 		// We can also use `wg syncconf <iface> <(wg-quick strip <iface>)`
 		// Or simply reload the service.
 		if _, errRel := common.RunCommand(ctx, "systemctl", "reload-or-restart", w.serviceName()); errRel != nil {
+			// TODO: error handling
 			log.Printf("Warning: failed to reload/restart service %s: %v. A manual restart might be needed.", w.serviceName(), errRel)
 		} else {
 			log.Printf("Service %s reloaded/restarted.", w.serviceName())
@@ -182,7 +187,7 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 	clientPubKeyPath := filepath.Join(w.clientsDir, userID, "publickey")
 	clientPubKeyBytes, err := os.ReadFile(clientPubKeyPath)
 	if err != nil {
-		return fmt.Errorf("could not read public key for user %s: %w", userID, err)
+		return fmt.Errorf("get public key: %w", userID, err)
 	}
 	clientPublicKey := strings.TrimSpace(string(clientPubKeyBytes))
 
@@ -190,7 +195,7 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 
 	confContentBytes, err := os.ReadFile(w.serverConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to read server config %s: %w", w.serverConfigPath, err)
+		return fmt.Errorf("read server config %s: %w", w.serverConfigPath, err)
 	}
 
 	rePeerSection := regexp.MustCompile(fmt.Sprintf(`(?ms)^\s*\[Peer\][^\[]*?PublicKey\s*=\s*%s.*?(\n\s*\[Peer\]|\n\s*\z|\z)`, regexp.QuoteMeta(clientPublicKey)))
@@ -198,7 +203,7 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 
 	peerFound := newConfContent != string(confContentBytes)
 	if !peerFound {
-		log.Printf("Warning: Peer section for PublicKey %s not found in %s.", clientPublicKey, w.serverConfigPath)
+		return fmt.Errorf("peer not found: %w", err)
 	} else {
 		if err := os.WriteFile(w.serverConfigPath, []byte(strings.TrimSpace(newConfContent)+"\n"), 0600); err != nil {
 			return fmt.Errorf("failed to write updated server config %s: %w", w.serverConfigPath, err)
@@ -209,7 +214,7 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 	clientDir := filepath.Join(w.clientsDir, userID)
 	log.Printf("Removing client directory: %s", clientDir)
 	if err := os.RemoveAll(clientDir); err != nil {
-		return fmt.Errorf("failed to remove client directory %s: %w", clientDir, err)
+		return fmt.Errorf("remove client directory: %w", err)
 	}
 
 	if peerFound {
@@ -232,7 +237,7 @@ func (w *wireguardInfra) GetAllUsers(ctx context.Context) ([]*domain.User, error
 		if os.IsNotExist(err) {
 			return users, nil
 		}
-		return nil, fmt.Errorf("failed to read server config %s: %w", w.serverConfigPath, err)
+		return nil, fmt.Errorf("read server config: %w", err)
 	}
 	content := string(confContentBytes)
 
@@ -267,12 +272,12 @@ func (w *wireguardInfra) GetAllUsers(ctx context.Context) ([]*domain.User, error
 
 func (w *wireguardInfra) GetUserTraffic(ctx context.Context, userPublicKey string) (*domain.TrafficInfo, error) {
 	if userPublicKey == "" {
-		return nil, errors.New("user public key is required")
+		return nil, errors.New("empy public key")
 	}
 
 	dumpOutput, err := common.RunCommand(ctx, "wg", "show", w.wgInterfaceName, "dump")
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute 'wg show %s dump': %w", w.wgInterfaceName, err)
+		return nil, fmt.Errorf("wg show: %w", err)
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(string(dumpOutput)))
@@ -297,13 +302,13 @@ func (w *wireguardInfra) GetUserTraffic(ctx context.Context, userPublicKey strin
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error scanning wg dump: %w", err)
+		return nil, fmt.Errorf("scanning wg dump: %w", err)
 	}
-	return nil, fmt.Errorf("user %s not found in wg dump", userPublicKey)
+	return nil, fmt.Errorf("user not found in wg dump")
 }
 func (w *wireguardInfra) GetConfig(ctx context.Context, userID string) ([]byte, error) {
 	if userID == "" {
-		return nil, errors.New("user ID is required")
+		return nil, errors.New("empty user id")
 	}
 	clientConfFileName := userID + ".conf"
 	clientConfPath := filepath.Join(w.clientsDir, userID, clientConfFileName)
@@ -313,7 +318,7 @@ func (w *wireguardInfra) GetConfig(ctx context.Context, userID string) ([]byte, 
 		if os.IsNotExist(err) {
 			return nil, fs.ErrNotExist
 		}
-		return nil, fmt.Errorf("failed to read client config %s: %w", clientConfPath, err)
+		return nil, fmt.Errorf("read client config %s: %w", clientConfPath, err)
 	}
 	return configBytes, nil
 }

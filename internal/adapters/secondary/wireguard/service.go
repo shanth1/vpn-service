@@ -20,12 +20,11 @@ func (w *wireguardInfra) serviceName() string {
 func (w *wireguardInfra) StartService(ctx context.Context) error {
 	service := w.serviceName()
 	log.Printf("Enabling %s service...", service)
-	if _, err := common.RunCommand(ctx, "systemctl", "enable", service); err != nil {
-		log.Printf("Warning: systemctl enable %s returned: %v (might be already enabled)", service, err)
-	}
+	_, _ = common.RunCommand(ctx, "systemctl", "enable", service)
+
 	log.Printf("Starting %s service...", service)
 	if _, err := common.RunCommand(ctx, "systemctl", "start", service); err != nil {
-		return fmt.Errorf("failed to start %s service: %w", service, err)
+		return fmt.Errorf("systemctl start: %w", err)
 	}
 	log.Printf("%s service started.", service)
 	return nil
@@ -35,7 +34,7 @@ func (w *wireguardInfra) StopService(ctx context.Context) error {
 	service := w.serviceName()
 	log.Printf("Stopping %s service...", service)
 	if _, err := common.RunCommand(ctx, "systemctl", "stop", service); err != nil {
-		log.Printf("Warning: systemctl stop %s: %v (might be already stopped)", service, err)
+		return fmt.Errorf("systemctl stop: %s", err)
 	}
 	log.Printf("%s service stopped.", service)
 	return nil
