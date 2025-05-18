@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
@@ -20,7 +19,6 @@ func (w *wireguardInfra) findNextAvailableIP(ctx context.Context) (string, error
 
 	existingUsers, err := w.GetAllUsers(ctx)
 	if err != nil {
-		log.Printf("Warning: could not get all users to determine next IP: %v. Will try to find first available.", err)
 		existingUsers = []*domain.User{}
 	}
 

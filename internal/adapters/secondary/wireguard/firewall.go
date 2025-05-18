@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -13,12 +12,12 @@ import (
 )
 
 // TODO: move to system adapter
+// SetUpRedirection enables IPv4 forwarding
 func (w *wireguardInfra) SetUpRedirection(ctx context.Context) error {
 	if w.publicNetIface == "" {
 		return errors.New("empy net interface")
 	}
 
-	log.Println("Enabling IPv4 forwarding...")
 	if _, err := common.RunCommand(ctx, "sysctl", "-w", "net.ipv4.ip_forward=1"); err != nil {
 		return fmt.Errorf("enable ipv4 forwarding: %w", err)
 	}

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -37,12 +36,10 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 	clientConfFileName := user.TG + ".conf"
 	clientConfPath := filepath.Join(clientDir, clientConfFileName)
 
-	log.Printf("Creating directory for client %s: %s", user.TG, clientDir)
 	if err := os.MkdirAll(clientDir, 0700); err != nil {
 		return fmt.Errorf("create client directory: %w", err)
 	}
 
-	log.Printf("Generating keys for client %s...", user.TG)
 	privateKeyBytes, err := common.RunCommand(ctx, "wg", "genkey")
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -74,9 +71,6 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 		return fmt.Errorf("find available IP: %w", err)
 	}
 	user.Address = clientVPNAddress
-	log.Printf("Assigned IP %s to client %s", user.Address, user.TG)
-
-	log.Printf("Adding client %s to server configuration...", user.TG)
 
 	serverConfBytes, err := os.ReadFile(w.serverConfigPath)
 	if err != nil {
@@ -107,7 +101,6 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 		return fmt.Errorf("append peer to server config: %w", err)
 	}
 
-	log.Printf("Creating configuration file for client %s...", user.TG)
 	serverPubKeyBytes, err := os.ReadFile(w.serverPubKeyPath)
 	if err != nil {
 		return fmt.Errorf("read server public key: %w", err)
@@ -140,7 +133,7 @@ DNS = {{.DNS}}
 [Peer]
 PublicKey = {{.ServerPublicKey}}
 Endpoint = {{.ServerEndpoint}}:{{.ServerListenPort}}
-AllowedIPs = 0.0.0.0/0,::/0
+AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = {{.PersistentKeepalive}}
 `
 	tmpl, err := template.New("clientConf").Parse(clientConfTmpl)
@@ -156,25 +149,23 @@ PersistentKeepalive = {{.PersistentKeepalive}}
 	if err := os.WriteFile(clientConfPath, clientConfBuf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("write client config %s: %w", clientConfPath, err)
 	}
-	log.Printf("Client %s added. Config: %s", user.TG, clientConfPath)
 
-	log.Println("Restarting WireGuard service to apply changes...")
-	currentStatus, statusErr := w.GetStatus(ctx)
-	if statusErr == nil && currentStatus.IsRunning {
+	currentStatus, _ := w.GetStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("get status: %w", err)
+	}
+
+	if currentStatus.IsRunning {
 		// wg-quick re-reads config on `wg setconf` which happens internally
 		// or a full restart. `wg addconf` or `wg syncconf` is better if available.
 		// For wg-quick, often restart is simplest.
 		// We can also use `wg syncconf <iface> <(wg-quick strip <iface>)`
 		// Or simply reload the service.
 		if _, errRel := common.RunCommand(ctx, "systemctl", "reload-or-restart", w.serviceName()); errRel != nil {
-			// TODO: error handling
-			log.Printf("Warning: failed to reload/restart service %s: %v. A manual restart might be needed.", w.serviceName(), errRel)
-		} else {
-			log.Printf("Service %s reloaded/restarted.", w.serviceName())
+			return fmt.Errorf("reload or restart: %w", err)
 		}
-	} else if statusErr != nil {
-		log.Printf("Warning: could not get service status before restart: %v", statusErr)
 	}
+
 	return nil
 }
 
@@ -182,7 +173,6 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 	if userID == "" {
 		return errors.New("user ID is required")
 	}
-	log.Printf("Removing user %s...", userID)
 
 	clientPubKeyPath := filepath.Join(w.clientsDir, userID, "publickey")
 	clientPubKeyBytes, err := os.ReadFile(clientPubKeyPath)
@@ -190,8 +180,6 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 		return fmt.Errorf("get public key: %w", userID, err)
 	}
 	clientPublicKey := strings.TrimSpace(string(clientPubKeyBytes))
-
-	log.Printf("Removing peer with PublicKey %s from %s", clientPublicKey, w.serverConfigPath)
 
 	confContentBytes, err := os.ReadFile(w.serverConfigPath)
 	if err != nil {
@@ -208,24 +196,18 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 		if err := os.WriteFile(w.serverConfigPath, []byte(strings.TrimSpace(newConfContent)+"\n"), 0600); err != nil {
 			return fmt.Errorf("failed to write updated server config %s: %w", w.serverConfigPath, err)
 		}
-		log.Printf("Peer %s removed from server config.", userID)
 	}
 
 	clientDir := filepath.Join(w.clientsDir, userID)
-	log.Printf("Removing client directory: %s", clientDir)
 	if err := os.RemoveAll(clientDir); err != nil {
 		return fmt.Errorf("remove client directory: %w", err)
 	}
 
 	if peerFound {
-		log.Println("Reloading/Restarting WireGuard service to apply changes...")
 		if _, errRel := common.RunCommand(ctx, "systemctl", "reload-or-restart", w.serviceName()); errRel != nil {
-			log.Printf("Warning: failed to reload/restart service %s: %v. A manual restart might be needed.", w.serviceName(), errRel)
-		} else {
-			log.Printf("Service %s reloaded/restarted.", w.serviceName())
+			return fmt.Errorf("reload or restart: %w", err)
 		}
 	}
-	log.Printf("User %s removed successfully.", userID)
 	return nil
 }
 
