@@ -40,11 +40,11 @@ func NewWireguardInfra(serverPublicIP string) ports.Protocol {
 		serverListenPort:  51820,
 		serverDir:         rootDir,
 		clientsDir:        filepath.Join(rootDir, "clients"),
-		serverConfigPath:  filepath.Join(rootDir, wgInterface+".conf"),
-		serverPubKeyPath:  filepath.Join(rootDir, "publickey"),
-		serverPrivKeyPath: filepath.Join(rootDir, "privatekey"),
+		serverConfigPath:  filepath.Join(rootDir, getConfFileName(wgInterface)),
+		serverPubKeyPath:  getPublicKeyPath(rootDir),
+		serverPrivKeyPath: getPrivateKeyPath(rootDir),
 		publicNetIface:    "eth0",
 		wgInterfaceName:   wgInterface,
-		serverVPNAddrCIDR: "10.0.0",
+		serverVPNAddrCIDR: "10.0.0.1/24",
 	}
 }

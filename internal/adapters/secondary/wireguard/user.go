@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -31,40 +30,25 @@ func (w *wireguardInfra) AddUser(ctx context.Context, user *domain.User) error {
 	}
 
 	clientDir := filepath.Join(w.clientsDir, user.TG)
-	clientPrivKeyPath := filepath.Join(clientDir, "privatekey")
-	clientPubKeyPath := filepath.Join(clientDir, "publickey")
-	clientConfFileName := user.TG + ".conf"
-	clientConfPath := filepath.Join(clientDir, clientConfFileName)
 
 	if err := os.MkdirAll(clientDir, 0700); err != nil {
 		return fmt.Errorf("create client directory: %w", err)
 	}
 
-	privateKeyBytes, err := common.RunCommand(ctx, "wg", "genkey")
+	privateKeyBytes, publicKeyBytes, err := genWgKeys(ctx)
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("wg genkey: %w. Stderr: %s", err, string(exitErr.Stderr))
-		}
-		return fmt.Errorf("wg genkey: %w", err)
-	}
-	user.PrivateKey = strings.TrimSpace(string(privateKeyBytes))
-	if err := os.WriteFile(clientPrivKeyPath, []byte(user.PrivateKey), 0600); err != nil {
-		return fmt.Errorf("write client private key: %w", err)
+		return fmt.Errorf("gen keys: %w", err)
 	}
 
-	cmdPubKey := exec.CommandContext(ctx, "wg", "pubkey")
-	cmdPubKey.Stdin = strings.NewReader(user.PrivateKey)
-	publicKeyBytes, err := cmdPubKey.Output()
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("wg pubkey: %w. Stderr: %s", err, string(exitErr.Stderr))
-		}
-		return fmt.Errorf("wg pubkey: %w", err)
+	if err := os.WriteFile(getPrivateKeyPath(clientDir), []byte(user.PrivateKey), 0600); err != nil {
+		return fmt.Errorf("write client private key: %w", err)
 	}
-	user.PublicKey = strings.TrimSpace(string(publicKeyBytes))
-	if err := os.WriteFile(clientPubKeyPath, []byte(user.PublicKey), 0600); err != nil {
+	user.PrivateKey = string(privateKeyBytes)
+
+	if err := os.WriteFile(getPublicKeyPath(clientDir), []byte(user.PublicKey), 0600); err != nil {
 		return fmt.Errorf("write client public key: %w", err)
 	}
+	user.PublicKey = strings.TrimSpace(string(publicKeyBytes))
 
 	clientVPNAddress, err := w.findNextAvailableIP(ctx)
 	if err != nil {
@@ -146,8 +130,9 @@ PersistentKeepalive = {{.PersistentKeepalive}}
 		return fmt.Errorf("execute config template: %w", err)
 	}
 
-	if err := os.WriteFile(clientConfPath, clientConfBuf.Bytes(), 0600); err != nil {
-		return fmt.Errorf("write client config %s: %w", clientConfPath, err)
+	clientConfFilePath := getConfFileName("client")
+	if err := os.WriteFile(clientConfFilePath, clientConfBuf.Bytes(), 0600); err != nil {
+		return fmt.Errorf("write client config: %w", err)
 	}
 
 	currentStatus, _ := w.GetStatus(ctx)
@@ -174,12 +159,12 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 		return errors.New("user ID is required")
 	}
 
-	clientPubKeyPath := filepath.Join(w.clientsDir, userID, "publickey")
-	clientPubKeyBytes, err := os.ReadFile(clientPubKeyPath)
+	clientDir := filepath.Join(w.clientsDir, userID)
+
+	clientPublicKey, err := getKey(getPublicKeyPath(clientDir))
 	if err != nil {
 		return fmt.Errorf("get public key: %w", userID, err)
 	}
-	clientPublicKey := strings.TrimSpace(string(clientPubKeyBytes))
 
 	confContentBytes, err := os.ReadFile(w.serverConfigPath)
 	if err != nil {
@@ -198,7 +183,6 @@ func (w *wireguardInfra) RemoveUser(ctx context.Context, userID string) error {
 		}
 	}
 
-	clientDir := filepath.Join(w.clientsDir, userID)
 	if err := os.RemoveAll(clientDir); err != nil {
 		return fmt.Errorf("remove client directory: %w", err)
 	}
@@ -288,19 +272,20 @@ func (w *wireguardInfra) GetUserTraffic(ctx context.Context, userPublicKey strin
 	}
 	return nil, fmt.Errorf("user not found in wg dump")
 }
+
 func (w *wireguardInfra) GetConfig(ctx context.Context, userID string) ([]byte, error) {
 	if userID == "" {
 		return nil, errors.New("empty user id")
 	}
-	clientConfFileName := userID + ".conf"
-	clientConfPath := filepath.Join(w.clientsDir, userID, clientConfFileName)
+
+	clientConfPath := filepath.Join(w.clientsDir, userID, getConfFileName("client"))
 
 	configBytes, err := os.ReadFile(clientConfPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fs.ErrNotExist
 		}
-		return nil, fmt.Errorf("read client config %s: %w", clientConfPath, err)
+		return nil, fmt.Errorf("read client config: %w", err)
 	}
 	return configBytes, nil
 }
