@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 
@@ -12,20 +11,16 @@ import (
 	"github.com/shanth1/vpn-service/internal/adapters/secondary/wireguard"
 	"github.com/shanth1/vpn-service/internal/config"
 	"github.com/shanth1/vpn-service/internal/core/usecase"
-	"github.com/shanth1/vpn-service/pkg/reader"
+	"github.com/shanth1/vpn-service/pkg/configutil.go"
 )
 
 func main() {
 	ctx := context.Background()
 
-	configPath := flag.String("config", "", "Path to the config file")
-	flag.Parse()
-	if *configPath == "" {
-		log.Fatal("usage: app -config /path/to/config.yaml")
-	}
+	configPath := configutil.GetConfigPath()
 
 	cfg := config.TUI{}
-	reader.Load(*configPath, &cfg)
+	configutil.Load(configPath, &cfg)
 	fmt.Println(cfg)
 
 	systemInfra := system.NewInfra()
