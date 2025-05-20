@@ -3,6 +3,7 @@ package qr
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/skip2/go-qrcode"
 )
@@ -13,11 +14,11 @@ func NewInfra() *infra {
 	return &infra{}
 }
 
-func (*infra) Generate(ctx context.Context, fileName string, data []byte) error {
+func (*infra) Generate(ctx context.Context, outputDir, fileName string, data []byte) error {
 	dataString := string(data)
-	outputFilename := fileName + ".png"
+	filePath := filepath.Join(outputDir, fileName+".png")
 
-	err := qrcode.WriteFile(dataString, qrcode.Medium, 256, outputFilename)
+	err := qrcode.WriteFile(dataString, qrcode.Medium, 256, filePath)
 	if err != nil {
 		return fmt.Errorf("qrcode.WriteFile: %w", err)
 	}

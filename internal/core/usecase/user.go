@@ -27,7 +27,7 @@ func (s *vpnServiceImpl) SaveConfig(ctx context.Context, id string) error {
 
 	// TODO: save config
 
-	if err := s.qr.Generate(ctx, id, config); err != nil {
+	if err := s.qr.Generate(ctx, ".", id, config); err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}
 

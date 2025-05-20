@@ -27,7 +27,7 @@ type Protocol interface {
 
 // QRCode is secondary port for working with qr codes
 type QRCode interface {
-	Generate(ctx context.Context, fileName string, data []byte) error
+	Generate(ctx context.Context, outputDir, fileName string, data []byte) error
 }
 
 // System is secondary port for working with system
