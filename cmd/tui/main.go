@@ -21,20 +21,29 @@ func main() {
 	cfg := config.TUI{}
 	configutil.Load(configutil.GetConfigPath(), &cfg)
 
-	var systemAdapter ports.System
-	if cfg.Env == common.EnvProd {
-		systemAdapter = system.NewAdapter()
-	} else {
-		systemAdapter = system.NewFakeAdapter()
-	}
+	systemAdapter := newSystemAdapter(cfg.Env)
 	ifaceName, publicIP, err := systemAdapter.GetNetworkInfo()
 	if err != nil {
 		log.Fatalf("network info: %v", err)
 	}
-	wgAdapter := wireguard.NewAdapter(publicIP, ifaceName)
+	wgAdapter := newProtocolAdapter(cfg.Env, publicIP, ifaceName)
 	qrAdapter := qr.NewAdapter()
 
 	core := usecase.NewVPNCore(systemAdapter, wgAdapter, qrAdapter)
 	tuiHandler := bubbletea.NewTUIHandler(core)
 	tuiHandler.MustRun(ctx)
+}
+
+func newSystemAdapter(env string) ports.System {
+	if env == common.EnvProd {
+		return system.NewAdapter()
+	}
+	return system.NewFakeAdapter()
+}
+
+func newProtocolAdapter(env, serverPublicIP, netPublicIfaceName string) ports.Protocol {
+	if env == common.EnvProd {
+		return wireguard.NewAdapter(serverPublicIP, netPublicIfaceName)
+	}
+	return wireguard.NewFakeAdapter()
 }

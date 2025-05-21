@@ -48,3 +48,9 @@ func NewAdapter(serverPublicIP, netPublicIfaceName string) ports.Protocol {
 		serverVPNAddrCIDR:  "10.0.0.1/24",
 	}
 }
+
+type wgFakeAdapter struct{}
+
+func NewFakeAdapter() ports.Protocol {
+	return &wgFakeAdapter{}
+}
