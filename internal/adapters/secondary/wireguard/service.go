@@ -12,12 +12,12 @@ import (
 	"github.com/shanth1/vpn-service/internal/core/domain"
 )
 
-func (w *wireguardInfra) serviceName() string {
-	return fmt.Sprintf("wg-quick@%s", w.wgInterfaceName)
+func (a *wgAdapter) serviceName() string {
+	return fmt.Sprintf("wg-quick@%s", a.wgInterfaceName)
 }
 
-func (w *wireguardInfra) StartService(ctx context.Context) error {
-	service := w.serviceName()
+func (a *wgAdapter) StartService(ctx context.Context) error {
+	service := a.serviceName()
 
 	_, _ = common.RunCommand(ctx, "systemctl", "enable", service)
 	if _, err := common.RunCommand(ctx, "systemctl", "start", service); err != nil {
@@ -27,8 +27,8 @@ func (w *wireguardInfra) StartService(ctx context.Context) error {
 	return nil
 }
 
-func (w *wireguardInfra) StopService(ctx context.Context) error {
-	service := w.serviceName()
+func (a *wgAdapter) StopService(ctx context.Context) error {
+	service := a.serviceName()
 
 	if _, err := common.RunCommand(ctx, "systemctl", "stop", service); err != nil {
 		return fmt.Errorf("systemctl stop: %s", err)
@@ -37,13 +37,13 @@ func (w *wireguardInfra) StopService(ctx context.Context) error {
 	return nil
 }
 
-func (w *wireguardInfra) GetStatus(ctx context.Context) (*domain.Status, error) {
+func (a *wgAdapter) GetStatus(ctx context.Context) (*domain.Status, error) {
 	status := &domain.Status{
-		InterfaceName: w.wgInterfaceName,
-		ListeningPort: w.serverListenPort,
+		InterfaceName: a.wgInterfaceName,
+		ListeningPort: a.serverListenPort,
 	}
 
-	service := w.serviceName()
+	service := a.serviceName()
 	output, err := common.RunCommand(ctx, "systemctl", "is-active", service)
 	if err != nil {
 		return nil, fmt.Errorf("systemctl is-active: %w", err)
@@ -51,7 +51,7 @@ func (w *wireguardInfra) GetStatus(ctx context.Context) (*domain.Status, error) 
 	status.IsRunning = strings.TrimSpace(string(output)) == "active"
 
 	if status.IsRunning {
-		wgShowOutput, err := common.RunCommand(ctx, "wg", "show", w.wgInterfaceName)
+		wgShowOutput, err := common.RunCommand(ctx, "wg", "show", a.wgInterfaceName)
 		if err != nil {
 			return nil, fmt.Errorf("wg show: %w", err)
 		}

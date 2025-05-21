@@ -4,20 +4,20 @@ import (
 	"github.com/shanth1/vpn-service/internal/core/ports"
 )
 
-type vpnServiceImpl struct {
+type vpnCoreImpl struct {
 	protocol ports.Protocol
 	qr       ports.QRCode
 	system   ports.System
 }
 
-func NewVPNService(
-	systemInfra ports.System,
-	protocolInfra ports.Protocol,
-	qrInfra ports.QRCode,
+func NewVPNCore(
+	systemAdapter ports.System,
+	protocolAdapter ports.Protocol,
+	qrAdapter ports.QRCode,
 ) ports.PrimaryPort {
-	return &vpnServiceImpl{
-		system:   systemInfra,
-		protocol: protocolInfra,
-		qr:       qrInfra,
+	return &vpnCoreImpl{
+		system:   systemAdapter,
+		protocol: protocolAdapter,
+		qr:       qrAdapter,
 	}
 }

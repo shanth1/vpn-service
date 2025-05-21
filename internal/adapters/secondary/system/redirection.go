@@ -11,7 +11,7 @@ import (
 )
 
 // SetUpRedirection enables IPv4 forwarding
-func (s *systemInfra) SetUpRedirection(ctx context.Context) error {
+func (s *systemAdapter) SetUpRedirection(ctx context.Context) error {
 	if _, err := common.RunCommand(ctx, "sysctl", "-s", "net.ipv4.ip_forward=1"); err != nil {
 		return fmt.Errorf("enable ipv4 forwarding: %s", err)
 	}

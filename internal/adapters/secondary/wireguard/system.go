@@ -7,7 +7,7 @@ import (
 	"github.com/shanth1/vpn-service/internal/common"
 )
 
-func (w *wireguardInfra) Install(ctx context.Context) error {
+func (*wgAdapter) Install(ctx context.Context) error {
 	if _, err := common.RunCommand(ctx, "apt", "update", "-y"); err != nil {
 		return fmt.Errorf("update packages: %w", err)
 	}
@@ -21,7 +21,7 @@ func (w *wireguardInfra) Install(ctx context.Context) error {
 	return nil
 }
 
-func (w *wireguardInfra) Uninstall(ctx context.Context) error {
+func (*wgAdapter) Uninstall(ctx context.Context) error {
 	if _, err := common.RunCommand(ctx, "apt", "remove", "-y", "wireguard", "wireguard-tools"); err != nil {
 		return fmt.Errorf("remove packages: %w", err)
 	}

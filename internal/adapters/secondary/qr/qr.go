@@ -8,13 +8,13 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-type infra struct{}
+type qrAdapter struct{}
 
-func NewInfra() *infra {
-	return &infra{}
+func NewAdapter() *qrAdapter {
+	return &qrAdapter{}
 }
 
-func (*infra) Generate(ctx context.Context, outputDir, fileName string, data []byte) error {
+func (*qrAdapter) Generate(ctx context.Context, outputDir, fileName string, data []byte) error {
 	dataString := string(data)
 	filePath := filepath.Join(outputDir, fileName+".png")
 

@@ -8,8 +8,8 @@ import (
 	"github.com/shanth1/vpn-service/internal/common"
 )
 
-func (w *wireguardInfra) SetUpServer(ctx context.Context) error {
-	if err := os.MkdirAll(w.serverDir, 0700); err != nil {
+func (a *wgAdapter) SetUpServer(ctx context.Context) error {
+	if err := os.MkdirAll(a.serverDir, 0700); err != nil {
 		return fmt.Errorf("create directory: %w", err)
 	}
 
@@ -18,12 +18,12 @@ func (w *wireguardInfra) SetUpServer(ctx context.Context) error {
 		return fmt.Errorf("gen keys: %w", err)
 	}
 
-	if err := os.WriteFile(w.serverPrivKeyPath, privateKeyBytes, 0600); err != nil {
+	if err := os.WriteFile(a.serverPrivKeyPath, privateKeyBytes, 0600); err != nil {
 		return fmt.Errorf("write server private key: %w", err)
 	}
 
-	if err := os.WriteFile(w.serverPrivKeyPath, publicKeyBytes, 0600); err != nil {
-		return fmt.Errorf("write server public key: %w", w.serverPrivKeyPath, err)
+	if err := os.WriteFile(a.serverPrivKeyPath, publicKeyBytes, 0600); err != nil {
+		return fmt.Errorf("write server public key: %w", a.serverPrivKeyPath, err)
 	}
 
 	serverConfContent := fmt.Sprintf(`[Interface]
@@ -34,24 +34,24 @@ SaveConfig = true
 
 PostUp = iptables -A FORWARD -i %%i -j ACCEPT; iptables -t nat -A POSTROUTING -o %s -j MASQUERADE; iptables -A FORWARD -o %%i -j ACCEPT
 PostDown = iptables -D FORWARD -i %%i -j ACCEPT; iptables -t nat -D POSTROUTING -o %s -j MASQUERADE; iptables -D FORWARD -o %%i -j ACCEPT
-`, string(privateKeyBytes), w.serverVPNAddrCIDR, w.serverListenPort, w.netPublicIfaceName, w.netPublicIfaceName)
+`, string(privateKeyBytes), a.serverVPNAddrCIDR, a.serverListenPort, a.netPublicIfaceName, a.netPublicIfaceName)
 
-	if err := os.WriteFile(w.serverConfigPath, []byte(serverConfContent), 0600); err != nil {
+	if err := os.WriteFile(a.serverConfigPath, []byte(serverConfContent), 0600); err != nil {
 		return fmt.Errorf("server configuration: %w", err)
 	}
 
 	return nil
 }
 
-func (w *wireguardInfra) TearDownServer(ctx context.Context) error {
-	if err := w.StopService(ctx); err != nil {
-		return fmt.Errorf("stop service: %w", w.serverDir, err)
+func (a *wgAdapter) TearDownServer(ctx context.Context) error {
+	if err := a.StopService(ctx); err != nil {
+		return fmt.Errorf("stop service: %w", a.serverDir, err)
 	}
 
-	_, _ = common.RunCommand(ctx, "systemctl", "disable", w.serviceName())
+	_, _ = common.RunCommand(ctx, "systemctl", "disable", a.serviceName())
 
-	if err := os.RemoveAll(w.serverDir); err != nil {
-		return fmt.Errorf("remove directory: %w", w.serverDir, err)
+	if err := os.RemoveAll(a.serverDir); err != nil {
+		return fmt.Errorf("remove directory: %w", a.serverDir, err)
 	}
 
 	return nil

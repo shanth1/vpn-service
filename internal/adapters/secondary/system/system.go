@@ -1,13 +1,13 @@
 package system
 
-type systemInfra struct{}
+type systemAdapter struct{}
 
-func NewInfra() *systemInfra {
-	return &systemInfra{}
+func NewAdapter() *systemAdapter {
+	return &systemAdapter{}
 }
 
-type fakeSystemInfra struct{}
+type fakeSystemAdapter struct{}
 
-func NewFakeInfra() *fakeSystemInfra {
-	return &fakeSystemInfra{}
+func NewFakeAdapter() *fakeSystemAdapter {
+	return &fakeSystemAdapter{}
 }

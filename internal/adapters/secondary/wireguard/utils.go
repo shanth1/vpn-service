@@ -11,19 +11,19 @@ import (
 	"github.com/shanth1/vpn-service/internal/core/domain"
 )
 
-func (w *wireguardInfra) findNextAvailableIP(ctx context.Context) (string, error) {
-	_, ipNet, err := net.ParseCIDR(w.serverVPNAddrCIDR)
+func (a *wgAdapter) findNextAvailableIP(ctx context.Context) (string, error) {
+	_, ipNet, err := net.ParseCIDR(a.serverVPNAddrCIDR)
 	if err != nil {
-		return "", fmt.Errorf("invalid server VPN address format '%s': %w", w.serverVPNAddrCIDR, err)
+		return "", fmt.Errorf("invalid server VPN address format '%s': %w", a.serverVPNAddrCIDR, err)
 	}
 
-	existingUsers, err := w.GetAllUsers(ctx)
+	existingUsers, err := a.GetAllUsers(ctx)
 	if err != nil {
 		existingUsers = []*domain.User{}
 	}
 
 	existingIPs := make(map[string]bool)
-	serverIPOnly := strings.Split(w.serverVPNAddrCIDR, "/")[0]
+	serverIPOnly := strings.Split(a.serverVPNAddrCIDR, "/")[0]
 	existingIPs[serverIPOnly] = true
 
 	for _, user := range existingUsers {

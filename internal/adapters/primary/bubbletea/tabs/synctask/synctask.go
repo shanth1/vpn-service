@@ -31,7 +31,7 @@ type taskInfo struct {
 }
 
 type Model struct {
-	service          ports.PrimaryPort
+	core             ports.PrimaryPort
 	width            int
 	height           int
 	tasks            []taskInfo
@@ -42,14 +42,14 @@ type Model struct {
 	err              error
 }
 
-func New(service ports.PrimaryPort) Model {
+func New(core ports.PrimaryPort) Model {
 	tasks := []taskInfo{
 		{id: 0, name: "Задача A (2 сек, успех/ошибка 50%)"},
 		{id: 1, name: "Задача B (3 сек, всегда успех)"},
 		{id: 2, name: "Задача C (1 сек, всегда ошибка)"},
 	}
 	return Model{
-		service:          service,
+		core:             core,
 		tasks:            tasks,
 		selectedTask:     0,
 		runningTaskIndex: -1,

@@ -4,10 +4,10 @@ import (
 	"context"
 )
 
-func (s *vpnServiceImpl) Install(ctx context.Context) error {
+func (s *vpnCoreImpl) Install(ctx context.Context) error {
 	return s.protocol.Install(ctx)
 }
 
-func (s *vpnServiceImpl) Uninstall(ctx context.Context) error {
+func (s *vpnCoreImpl) Uninstall(ctx context.Context) error {
 	return s.protocol.Uninstall(ctx)
 }

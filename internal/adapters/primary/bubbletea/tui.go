@@ -13,26 +13,26 @@ import (
 )
 
 type handler struct {
-	service ports.PrimaryPort
+	core ports.PrimaryPort
 }
 
-func NewTUIHandler(service ports.PrimaryPort) *handler {
-	return &handler{service: service}
+func NewTUIHandler(core ports.PrimaryPort) *handler {
+	return &handler{core: core}
 }
 
 func (h *handler) MustRun(ctx context.Context) {
-	p := tea.NewProgram(initialModel(h.service), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel(h.core), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
 }
 
-func initialModel(service ports.PrimaryPort) model {
+func initialModel(core ports.PrimaryPort) model {
 	return model{
 		tabs: []*tab{
 			newTab(helppage.TabTitle, helppage.New()),
-			newTab(synctask.TabTitle, synctask.New(service)),
+			newTab(synctask.TabTitle, synctask.New(core)),
 			newTab(loading.TabTitle, loading.New()),
 			{
 				title:   "Service",

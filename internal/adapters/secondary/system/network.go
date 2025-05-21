@@ -10,7 +10,7 @@ type networkInfo struct {
 	ip   string
 }
 
-func (s *systemInfra) GetNetworkInfo() (ifaceName, ip string, err error) {
+func (s *systemAdapter) GetNetworkInfo() (ifaceName, ip string, err error) {
 	var result networkInfo
 	found := false
 

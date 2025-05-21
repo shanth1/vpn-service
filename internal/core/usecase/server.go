@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (s *vpnServiceImpl) Init(ctx context.Context) error {
+func (s *vpnCoreImpl) Init(ctx context.Context) error {
 	if err := s.system.SetUpRedirection(ctx); err != nil {
 		return fmt.Errorf("redirection: %w", err)
 	}
@@ -17,6 +17,6 @@ func (s *vpnServiceImpl) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *vpnServiceImpl) CleanUp(ctx context.Context) error {
+func (s *vpnCoreImpl) CleanUp(ctx context.Context) error {
 	return s.protocol.TearDownServer(ctx)
 }

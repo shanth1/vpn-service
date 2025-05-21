@@ -18,7 +18,7 @@ import (
       └── publickey
 */
 
-type wireguardInfra struct {
+type wgAdapter struct {
 	serverPublicIP     string
 	serverListenPort   int
 	serverVPNAddrCIDR  string
@@ -31,11 +31,11 @@ type wireguardInfra struct {
 	wgInterfaceName    string
 }
 
-func NewInfra(serverPublicIP, netPublicIfaceName string) ports.Protocol {
+func NewAdapter(serverPublicIP, netPublicIfaceName string) ports.Protocol {
 	rootDir := "/etc/wireguard"
 	wgInterface := "wg0"
 
-	return &wireguardInfra{
+	return &wgAdapter{
 		serverPublicIP:     serverPublicIP,
 		serverListenPort:   51820,
 		serverDir:          rootDir,

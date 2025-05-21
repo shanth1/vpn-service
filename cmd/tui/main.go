@@ -21,20 +21,20 @@ func main() {
 	cfg := config.TUI{}
 	configutil.Load(configutil.GetConfigPath(), &cfg)
 
-	var systemInfra ports.System
+	var systemAdapter ports.System
 	if cfg.Env == common.EnvProd {
-		systemInfra = system.NewInfra()
+		systemAdapter = system.NewAdapter()
 	} else {
-		systemInfra = system.NewFakeInfra()
+		systemAdapter = system.NewFakeAdapter()
 	}
-	ifaceName, publicIP, err := systemInfra.GetNetworkInfo()
+	ifaceName, publicIP, err := systemAdapter.GetNetworkInfo()
 	if err != nil {
 		log.Fatalf("network info: %v", err)
 	}
-	wgInfra := wireguard.NewInfra(publicIP, ifaceName)
-	qrInfra := qr.NewInfra()
+	wgAdapter := wireguard.NewAdapter(publicIP, ifaceName)
+	qrAdapter := qr.NewAdapter()
 
-	service := usecase.NewVPNService(systemInfra, wgInfra, qrInfra)
-	tuiHandler := bubbletea.NewTUIHandler(service)
+	core := usecase.NewVPNCore(systemAdapter, wgAdapter, qrAdapter)
+	tuiHandler := bubbletea.NewTUIHandler(core)
 	tuiHandler.MustRun(ctx)
 }
