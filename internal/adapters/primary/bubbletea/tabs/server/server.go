@@ -1,11 +1,8 @@
-package synctask
+package server
 
 import (
-	"errors"
 	"fmt"
-	"math/rand"
 	"strings"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -13,13 +10,7 @@ import (
 	"github.com/shanth1/vpn-service/internal/core/ports"
 )
 
-const TabTitle = "Sync Task"
-
-type taskResultMsg struct {
-	taskIndex int
-	result    string
-	err       error
-}
+const TabTitle = "Server"
 
 type taskStartMsg struct {
 	taskIndex int
@@ -44,9 +35,10 @@ type Model struct {
 
 func New(core ports.PrimaryPort) Model {
 	tasks := []taskInfo{
-		{id: 0, name: "Задача A (2 сек, успех/ошибка 50%)"},
-		{id: 1, name: "Задача B (3 сек, всегда успех)"},
-		{id: 2, name: "Задача C (1 сек, всегда ошибка)"},
+		{id: taskInstallID, name: "Install packages"},
+		{id: taskUninstallID, name: "Uninstall packages"},
+		{id: taskInitID, name: "Init server"},
+		{id: taskCleanUpID, name: "Clean up server"},
 	}
 	return Model{
 		core:             core,
@@ -59,33 +51,6 @@ func New(core ports.PrimaryPort) Model {
 
 func (m Model) Init() tea.Cmd {
 	return nil
-}
-
-func simulateTask(taskID int) (string, error) {
-	switch taskID {
-	case 0:
-		time.Sleep(2 * time.Second)
-		if rand.Intn(2) == 0 {
-			return fmt.Sprintf("Задача A (%d) успешно завершена!", taskID), nil
-		}
-		return "", fmt.Errorf("задача A (%d) завершилась с ошибкой", taskID)
-	case 1:
-		time.Sleep(3 * time.Second)
-		return fmt.Sprintf("Задача B (%d) всегда успешна.", taskID), nil
-	case 2:
-		time.Sleep(1 * time.Second)
-		return "", fmt.Errorf("задача C (%d) всегда завершается ошибкой", taskID)
-	default:
-		return "", errors.New("неизвестная задача")
-	}
-}
-
-func runTaskCmd(taskIndex int, taskID int) tea.Cmd {
-	return func() tea.Msg {
-		result, err := simulateTask(taskID)
-
-		return taskResultMsg{taskIndex: taskIndex, result: result, err: err}
-	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -109,8 +74,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.runningTaskIndex = m.selectedTask
 				m.lastResult = ""
 				m.err = nil
-				selectedTaskInfo := m.tasks[m.selectedTask]
-				return m, runTaskCmd(m.selectedTask, selectedTaskInfo.id)
+				return m, m.processTask(m.selectedTask)
 			}
 		}
 
@@ -122,7 +86,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.lastResult = ""
 		} else {
 			m.err = nil
-			m.lastResult = msg.result
+			m.lastResult = "RESULT"
 		}
 		return m, nil
 	}
@@ -132,7 +96,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	listStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, true, false, false).
 		BorderForeground(tuicommon.AccentColor).Padding(1, 2)
-	statusStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, false, true).
+	statusStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, false, false).
 		BorderForeground(tuicommon.AccentColor).Padding(1, 2)
 	selectedItemStyle := lipgloss.NewStyle().Foreground(tuicommon.AccentColor).Bold(true)
 	loadingStyle := lipgloss.NewStyle().Foreground(tuicommon.AccentColor).Italic(true)
@@ -148,17 +112,17 @@ func (m Model) View() string {
 		}
 		runningIndicator := ""
 		if i == m.runningTaskIndex {
-			runningIndicator = loadingStyle.Render(" (выполняется...)")
+			runningIndicator = loadingStyle.Render(" (processing...)")
 		}
 		listBuilder.WriteString(fmt.Sprintf("%s%s%s\n", style.Render(cursor), style.Render(task.name), runningIndicator))
 	}
 
 	var statusBuilder strings.Builder
-	statusBuilder.WriteString("Статус:\n\n")
+	statusBuilder.WriteString("Status:\n\n")
 	if m.isLoading && m.runningTaskIndex != -1 {
 		statusBuilder.WriteString(loadingStyle.Render(fmt.Sprintf("Выполняется: %s", m.tasks[m.runningTaskIndex].name)))
 	} else if m.err != nil {
-		statusBuilder.WriteString(tuicommon.ErrorStyle.Render(fmt.Sprintf("Ошибка: %v", m.err)))
+		statusBuilder.WriteString(tuicommon.ErrorStyle.Render(fmt.Sprintf("Error: %v", m.err)))
 	} else if m.lastResult != "" {
 		statusBuilder.WriteString(tuicommon.SuccessStyle.Render(m.lastResult))
 	} else {
