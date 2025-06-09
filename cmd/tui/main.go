@@ -12,7 +12,7 @@ import (
 	"github.com/shanth1/vpn-service/internal/config"
 	"github.com/shanth1/vpn-service/internal/core/ports"
 	"github.com/shanth1/vpn-service/internal/core/usecase"
-	"github.com/shanth1/vpn-service/pkg/configutil.go"
+	"github.com/shanth1/vpn-service/pkg/configutil"
 )
 
 func main() {
