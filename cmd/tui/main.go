@@ -19,7 +19,9 @@ func main() {
 	ctx := context.Background()
 
 	cfg := config.TUI{}
-	configutil.Load(configutil.GetConfigPath(), &cfg)
+	if err := configutil.Load(configutil.GetConfigPath(), &cfg); err != nil {
+		log.Fatalf("load config: %w", err)
+	}
 
 	systemAdapter := newSystemAdapter(cfg.Env)
 	ifaceName, publicIP, err := systemAdapter.GetNetworkInfo()
