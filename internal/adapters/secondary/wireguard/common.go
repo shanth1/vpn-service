@@ -14,7 +14,7 @@ import (
 
 // getConfFileName returns filename with .conf
 func getConfFileName(fileName string) string {
-	return "" + ".conf"
+	return fileName + ".conf"
 }
 
 func getPrivateKeyPath(dir string) string {

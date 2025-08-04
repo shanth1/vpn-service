@@ -23,7 +23,7 @@ func (a *wgAdapter) SetUpServer(ctx context.Context) error {
 	}
 
 	if err := os.WriteFile(a.serverPrivKeyPath, publicKeyBytes, 0600); err != nil {
-		return fmt.Errorf("write server public key: %w", a.serverPrivKeyPath, err)
+		return fmt.Errorf("write server public key to %q: %w", a.serverPrivKeyPath, err)
 	}
 
 	serverConfContent := fmt.Sprintf(`[Interface]
@@ -45,13 +45,13 @@ PostDown = iptables -D FORWARD -i %%i -j ACCEPT; iptables -t nat -D POSTROUTING 
 
 func (a *wgAdapter) TearDownServer(ctx context.Context) error {
 	if err := a.StopService(ctx); err != nil {
-		return fmt.Errorf("stop service: %w", a.serverDir, err)
+		return fmt.Errorf("stop service: %w", err)
 	}
 
 	_, _ = common.RunCommand(ctx, "systemctl", "disable", a.serviceName())
 
 	if err := os.RemoveAll(a.serverDir); err != nil {
-		return fmt.Errorf("remove directory: %w", a.serverDir, err)
+		return fmt.Errorf("remove directory: %w", err)
 	}
 
 	return nil

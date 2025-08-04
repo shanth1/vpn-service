@@ -21,7 +21,7 @@ func (s *systemAdapter) SetUpRedirection(ctx context.Context) error {
 
 	contentBytes, err := os.ReadFile(sysctlConfPath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("read sysctl config: %s", sysctlConfPath, err)
+		return fmt.Errorf("read sysctl config from %q: %w", sysctlConfPath, err)
 	}
 	content := string(contentBytes)
 	re := regexp.MustCompile(`(?m)^\s*#?\s*net.ipv4.ip_forward\s*=\s*.*`)
@@ -34,7 +34,7 @@ func (s *systemAdapter) SetUpRedirection(ctx context.Context) error {
 		content = re.ReplaceAllString(content, sysctlLine)
 	}
 	if err := os.WriteFile(sysctlConfPath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("write updated content: %s", sysctlConfPath, err)
+		return fmt.Errorf("write updated content to %q: %w", sysctlConfPath, err)
 	}
 	if _, err := common.RunCommand(ctx, "sysctl", "-p"); err != nil {
 		return fmt.Errorf("sysctl update: %s", err)

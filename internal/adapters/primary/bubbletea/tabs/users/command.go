@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,6 +37,9 @@ func fetchAllUsersCmd(core ports.PrimaryPort) tea.Cmd {
 func fetchUserDetailsCmd(core ports.PrimaryPort, userPublicKey string) tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(time.Second)
+
+		fmt.Println(core, userPublicKey) // TODO: remove
+
 		// TODO: added method for fetching user traffic
 		traffic := &domain.TrafficInfo{}
 		return userDetailsLoadedMsg{traffic: traffic, err: nil}

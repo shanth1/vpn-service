@@ -20,7 +20,7 @@ func main() {
 
 	cfg := config.TUI{}
 	if err := configutil.Load(configutil.GetConfigPath(), &cfg); err != nil {
-		log.Fatalf("load config: %w", err)
+		log.Fatalf("load config: %v", err)
 	}
 
 	systemAdapter := newSystemAdapter(cfg.Env)

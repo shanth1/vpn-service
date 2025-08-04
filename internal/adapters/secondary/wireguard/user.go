@@ -135,7 +135,7 @@ PersistentKeepalive = {{.PersistentKeepalive}}
 		return fmt.Errorf("write client config: %w", err)
 	}
 
-	currentStatus, _ := a.GetStatus(ctx)
+	currentStatus, err := a.GetStatus(ctx)
 	if err != nil {
 		return fmt.Errorf("get status: %w", err)
 	}
@@ -163,12 +163,12 @@ func (a *wgAdapter) RemoveUser(ctx context.Context, userID string) error {
 
 	clientPublicKey, err := getKey(getPublicKeyPath(clientDir))
 	if err != nil {
-		return fmt.Errorf("get public key: %w", userID, err)
+		return fmt.Errorf("get public key: %w", err)
 	}
 
 	confContentBytes, err := os.ReadFile(a.serverConfigPath)
 	if err != nil {
-		return fmt.Errorf("read server config %s: %w", a.serverConfigPath, err)
+		return fmt.Errorf("read server config: %w", err)
 	}
 
 	rePeerSection := regexp.MustCompile(fmt.Sprintf(`(?ms)^\s*\[Peer\][^\[]*?PublicKey\s*=\s*%s.*?(\n\s*\[Peer\]|\n\s*\z|\z)`, regexp.QuoteMeta(clientPublicKey)))
@@ -179,7 +179,7 @@ func (a *wgAdapter) RemoveUser(ctx context.Context, userID string) error {
 		return fmt.Errorf("peer not found: %w", err)
 	} else {
 		if err := os.WriteFile(a.serverConfigPath, []byte(strings.TrimSpace(newConfContent)+"\n"), 0600); err != nil {
-			return fmt.Errorf("failed to write updated server config %s: %w", a.serverConfigPath, err)
+			return fmt.Errorf("server config update: %w", err)
 		}
 	}
 
